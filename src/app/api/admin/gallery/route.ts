@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
+import { revalidatePath } from "next/cache"
 
 // GET - List all gallery items
 export async function GET() {
@@ -30,6 +31,10 @@ export async function POST(request: NextRequest) {
         isActive: data.isActive ?? true,
       }
     })
+    
+    revalidatePath("/")
+    revalidatePath("/galeri")
+    revalidatePath("/admin/gallery")
     
     return NextResponse.json(gallery)
   } catch (error) {

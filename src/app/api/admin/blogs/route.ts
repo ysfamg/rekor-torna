@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
+import { revalidatePath } from "next/cache"
 
 // GET - List all blogs
 export async function GET() {
@@ -29,6 +30,10 @@ export async function POST(request: NextRequest) {
         featured: body.featured ?? false,
       },
     })
+    
+    revalidatePath("/")
+    revalidatePath("/blog")
+    revalidatePath("/admin/blogs")
     
     return NextResponse.json(blog)
   } catch {

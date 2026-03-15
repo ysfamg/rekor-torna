@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
+import { revalidatePath } from "next/cache"
 
 // GET - Get all settings
 export async function GET() {
@@ -28,6 +29,9 @@ export async function POST(request: NextRequest) {
         create: { key, value: String(value) },
       })
     }
+    
+    revalidatePath("/")
+    revalidatePath("/admin/settings")
     
     return NextResponse.json({ success: true })
   } catch {

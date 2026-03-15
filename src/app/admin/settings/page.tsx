@@ -1,6 +1,8 @@
 import { db } from "@/lib/db"
 import { SettingsManagement } from "./settings-management"
 
+export const dynamic = 'force-dynamic'
+
 async function getSettings() {
   const settings = await db.siteSetting.findMany()
   const settingsMap: Record<string, string> = {}

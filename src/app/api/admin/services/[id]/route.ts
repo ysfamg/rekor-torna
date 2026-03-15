@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
+import { revalidatePath } from "next/cache"
 
 interface RouteParams {
   params: Promise<{ id: string }>
@@ -34,6 +35,10 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       data: body,
     })
     
+    revalidatePath("/")
+    revalidatePath("/hizmetler")
+    revalidatePath("/admin/services")
+    
     return NextResponse.json(service)
   } catch (error) {
     return NextResponse.json({ error: "Hizmet güncellenemedi" }, { status: 500 })
@@ -47,6 +52,10 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     await db.service.delete({
       where: { id },
     })
+    
+    revalidatePath("/")
+    revalidatePath("/hizmetler")
+    revalidatePath("/admin/services")
     
     return NextResponse.json({ success: true })
   } catch (error) {

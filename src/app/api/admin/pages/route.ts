@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
+import { revalidatePath } from "next/cache"
 
 // GET - List all pages
 export async function GET() {
@@ -28,6 +29,9 @@ export async function POST(request: NextRequest) {
         seoDesc: data.seoDesc || null,
       }
     })
+    
+    revalidatePath("/")
+    revalidatePath("/admin/pages")
     
     return NextResponse.json(page)
   } catch (error) {

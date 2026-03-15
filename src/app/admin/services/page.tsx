@@ -1,6 +1,8 @@
 import { db } from "@/lib/db"
 import { ServiceManagement } from "./service-management"
 
+export const dynamic = 'force-dynamic'
+
 async function getServices() {
   return db.service.findMany({
     orderBy: { order: "asc" },

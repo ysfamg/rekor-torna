@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
+import { revalidatePath } from "next/cache"
 
 // GET - List all services
 export async function GET() {
@@ -29,6 +30,10 @@ export async function POST(request: NextRequest) {
         order: (maxOrder._max.order || 0) + 1,
       },
     })
+    
+    revalidatePath("/")
+    revalidatePath("/hizmetler")
+    revalidatePath("/admin/services")
     
     return NextResponse.json(service)
   } catch (error) {
