@@ -1,0 +1,113 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String    @id @default(cuid())
+  email     String    @unique
+  password  String
+  name      String
+  role      String    @default("admin")
+  isActive  Boolean   @default(true)
+  lastLogin DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@map("users")
+}
+
+model Service {
+  id                  String   @id @default(cuid())
+  title               String
+  slug                String   @unique
+  shortTitle          String
+  description         String
+  iconName            String   @default("Cog")
+  features            String
+  detailedDescription String
+  applications        String
+  equipment           String
+  benefits            String
+  order               Int      @default(0)
+  isActive            Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@map("services")
+}
+
+model Blog {
+  id        String   @id @default(cuid())
+  title     String
+  slug      String   @unique
+  excerpt   String
+  content   String
+  category  String
+  imageUrl  String?
+  published Boolean  @default(false)
+  featured  Boolean  @default(false)
+  seoTitle  String?
+  seoDesc   String?
+  viewCount Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("blogs")
+}
+
+model Contact {
+  id          String   @id @default(cuid())
+  name        String
+  email       String
+  phone       String?
+  serviceType String
+  message     String
+  status      String   @default("new")
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("contacts")
+}
+
+model SiteSetting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  type      String   @default("text")
+  updatedAt DateTime @updatedAt
+
+  @@map("site_settings")
+}
+
+model PageContent {
+  id        String   @id @default(cuid())
+  page      String   @unique
+  title     String?
+  content   String
+  seoTitle  String?
+  seoDesc   String?
+  updatedAt DateTime @updatedAt
+
+  @@map("page_contents")
+}
+
+model Gallery {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  imageUrl    String
+  thumbnail   String?
+  category    String   @default("genel")
+  order       Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("galleries")
+}
