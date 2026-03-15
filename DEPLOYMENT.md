@@ -42,6 +42,10 @@ npx prisma generate
 npx prisma db push
 npx prisma db seed
 
+# Klasör izinlerini ayarlayın (Önemli: Resim yükleme için)
+mkdir -p public/uploads
+chmod 777 public/uploads
+
 # Build al
 npm run build
 

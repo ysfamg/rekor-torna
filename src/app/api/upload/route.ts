@@ -27,21 +27,26 @@ export async function POST(request: NextRequest) {
 
     // Create uploads directory if not exists
     const uploadsDir = path.join(process.cwd(), "public", "uploads")
+    console.log("Upload directory:", uploadsDir)
+    
     if (!existsSync(uploadsDir)) {
+      console.log("Creating uploads directory...")
       await mkdir(uploadsDir, { recursive: true })
     }
 
     // Generate unique filename
     const timestamp = Date.now()
     const randomStr = Math.random().toString(36).substring(2, 8)
-    const ext = file.name.split(".").pop() || "jpg"
+    const ext = (file.name.split(".").pop() || "jpg").toLowerCase()
     const filename = `${timestamp}-${randomStr}.${ext}`
     const filepath = path.join(uploadsDir, filename)
+    console.log("Saving file to:", filepath)
 
     // Convert file to buffer and save
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
     await writeFile(filepath, buffer)
+    console.log("File saved successfully")
 
     // Return public URL
     const publicUrl = `/uploads/${filename}`
