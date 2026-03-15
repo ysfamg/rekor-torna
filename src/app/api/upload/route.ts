@@ -25,27 +25,36 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Dosya boyutu 5MB'dan küçük olmalıdır" }, { status: 400 })
     }
 
-    // Base directory resolution
-    const baseDir = process.cwd()
+    // --- Robust Path Resolution ---
+    const cwd = process.cwd()
     const relativeUploadsDir = path.join("public", "uploads")
     
-    // Primary uploads directory (project root)
-    const primaryUploadsDir = path.join(baseDir, relativeUploadsDir)
-    
-    // Secondary uploads directory (for standalone mode)
-    // In standalone mode, Next.js serves from .next/standalone/public
-    const standaloneUploadsDir = path.join(baseDir, ".next", "standalone", relativeUploadsDir)
-    
-    const targetDirs = [primaryUploadsDir]
-    if (primaryUploadsDir !== standaloneUploadsDir && existsSync(path.join(baseDir, ".next", "standalone"))) {
-      targetDirs.push(standaloneUploadsDir)
+    // Logic to find the real project root and the active public folder
+    let projectRoot = cwd
+    let activePublicDir = path.join(cwd, "public")
+
+    // If we are inside .next/standalone, the actual project root is 2 levels up
+    if (cwd.includes(path.join(".next", "standalone"))) {
+      projectRoot = path.resolve(cwd, "..", "..")
+      activePublicDir = path.join(cwd, "public") // In standalone, public is inside standalone
     }
 
-    console.log("Target upload directories:", targetDirs)
+    const uploadsDirs = [
+      path.join(projectRoot, relativeUploadsDir), // Global permanent uploads
+      path.join(activePublicDir, "uploads")        // Active serving uploads
+    ]
 
-    for (const dir of targetDirs) {
+    // Remove duplicates
+    const finalTargetDirs = Array.from(new Set(uploadsDirs))
+    
+    console.log("[Upload] Detected CWD:", cwd)
+    console.log("[Upload] Project Root:", projectRoot)
+    console.log("[Upload] Target Directories:", finalTargetDirs)
+
+    // Ensure all directories exist
+    for (const dir of finalTargetDirs) {
       if (!existsSync(dir)) {
-        console.log(`Creating directory: ${dir}`)
+        console.log(`[Upload] Creating directory: ${dir}`)
         await mkdir(dir, { recursive: true })
       }
     }
@@ -61,15 +70,15 @@ export async function POST(request: NextRequest) {
     const buffer = Buffer.from(bytes)
 
     // Save to all target directories
-    for (const dir of targetDirs) {
+    for (const dir of finalTargetDirs) {
       const filepath = path.join(dir, filename)
-      console.log(`Saving file to: ${filepath}`)
+      console.log(`[Upload] Saving to: ${filepath}`)
       await writeFile(filepath, buffer)
     }
     
-    console.log("File saved successfully to all locations")
+    console.log("[Upload] Success: Saved to all locations")
 
-    // Return public URL (Next.js serves from /uploads/)
+    // Return public URL
     const publicUrl = `/uploads/${filename}`
     
     return NextResponse.json({ 
