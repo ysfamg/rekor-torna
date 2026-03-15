@@ -26,13 +26,13 @@ model Service {
   title               String
   slug                String   @unique
   shortTitle          String
-  description         String
+  description         String   @db.Text
   iconName            String   @default("Cog")
-  features            String
-  detailedDescription String
-  applications        String
-  equipment           String
-  benefits            String
+  features            String   @db.Text
+  detailedDescription String   @db.Text
+  applications        String   @db.Text
+  equipment           String   @db.Text
+  benefits            String   @db.Text
   order               Int      @default(0)
   isActive            Boolean  @default(true)
   createdAt           DateTime @default(now())
@@ -45,14 +45,14 @@ model Blog {
   id        String   @id @default(cuid())
   title     String
   slug      String   @unique
-  excerpt   String
-  content   String
+  excerpt   String   @db.Text
+  content   String   @db.LongText
   category  String
-  imageUrl  String?
+  imageUrl  String?  @db.Text
   published Boolean  @default(false)
   featured  Boolean  @default(false)
   seoTitle  String?
-  seoDesc   String?
+  seoDesc   String?  @db.Text
   viewCount Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -66,9 +66,9 @@ model Contact {
   email       String
   phone       String?
   serviceType String
-  message     String
+  message     String   @db.Text
   status      String   @default("new")
-  notes       String?
+  notes       String?  @db.Text
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -78,7 +78,7 @@ model Contact {
 model SiteSetting {
   id        String   @id @default(cuid())
   key       String   @unique
-  value     String
+  value     String   @db.Text
   type      String   @default("text")
   updatedAt DateTime @updatedAt
 
@@ -89,9 +89,9 @@ model PageContent {
   id        String   @id @default(cuid())
   page      String   @unique
   title     String?
-  content   String
+  content   String   @db.LongText
   seoTitle  String?
-  seoDesc   String?
+  seoDesc   String?  @db.Text
   updatedAt DateTime @updatedAt
 
   @@map("page_contents")
@@ -100,9 +100,9 @@ model PageContent {
 model Gallery {
   id          String   @id @default(cuid())
   title       String
-  description String?
-  imageUrl    String
-  thumbnail   String?
+  description String?  @db.Text
+  imageUrl    String   @db.Text
+  thumbnail   String?  @db.Text
   category    String   @default("genel")
   order       Int      @default(0)
   isActive    Boolean  @default(true)

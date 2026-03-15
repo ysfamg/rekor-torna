@@ -31,6 +31,8 @@ export async function POST(request: NextRequest) {
     }
     
     revalidatePath("/")
+    revalidatePath("/iletisim")
+    revalidatePath("/hakkimizda")
     revalidatePath("/admin/settings")
     
     return NextResponse.json({ success: true })

@@ -1,8 +1,23 @@
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
 import { Shield, Award, Users, Factory, Anchor, Settings, Wrench, Clock } from "lucide-react"
+import { getPageContent } from "@/lib/services"
 
-export default function HakkimizdaPage() {
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
+export default async function HakkimizdaPage() {
+  const pageContent = await getPageContent("about")
+  
+  const content = pageContent?.content || `
+    2000 yılından bu yana gemi sanayine hizmet veren firmamız, torna ve hidrolik alanındaki 
+    uzman kadrosu ile kaliteli çözümler sunmaktadır. Müşteri memnuniyetini ön planda tutarak, 
+    zamanında teslimat ve rekabetçi fiyat politikamızla sektörde fark yaratmaktayız.
+
+    Modern tesisimizde, son teknoloji CNC makineleri ve uzman personelimiz ile gemi sanayinin 
+    tüm torna ve hidrolik ihtiyaçlarına hızlı ve güvenilir çözümler üretiyoruz.
+  `
+
   return (
     <>
       {/* Page Header */}
@@ -14,7 +29,7 @@ export default function HakkimizdaPage() {
         <div className="container mx-auto px-4 text-center relative">
           <Badge className="mb-4 bg-orange-500/20 text-orange-300 border-orange-500/30">HAKKIMIZDA</Badge>
           <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
-            Neden <span className="text-orange-400">Rekor</span> Torna Hidrolik?
+            {pageContent?.title || "Neden Rekor Torna Hidrolik?"}
           </h1>
           <p className="text-slate-300 text-lg max-w-2xl mx-auto">
             Gemi sanayinde kalite ve güvenin adresi
@@ -30,15 +45,9 @@ export default function HakkimizdaPage() {
               <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-6">
                 20 Yılı Aşkın Tecrübe
               </h2>
-              <p className="text-slate-600 dark:text-slate-400 text-lg leading-relaxed mb-6">
-                2000 yılından bu yana gemi sanayine hizmet veren firmamız, torna ve hidrolik alanındaki 
-                uzman kadrosu ile kaliteli çözümler sunmaktadır. Müşteri memnuniyetini ön planda tutarak, 
-                zamanında teslimat ve rekabetçi fiyat politikamızla sektörde fark yaratmaktayız.
-              </p>
-              <p className="text-slate-600 dark:text-slate-400 text-lg leading-relaxed mb-8">
-                Modern tesisimizde, son teknoloji CNC makineleri ve uzman personelimiz ile gemi sanayinin 
-                tüm torna ve hidrolik ihtiyaçlarına hızlı ve güvenilir çözümler üretiyoruz.
-              </p>
+              <div className="text-slate-600 dark:text-slate-400 text-lg leading-relaxed mb-8 whitespace-pre-wrap">
+                {content}
+              </div>
 
               {/* Features */}
               <div className="grid sm:grid-cols-2 gap-6">

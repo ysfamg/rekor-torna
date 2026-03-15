@@ -37,6 +37,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
     
     revalidatePath("/")
     revalidatePath("/blog")
+    revalidatePath(`/blog/${blog.slug}`)
     revalidatePath("/admin/blogs")
     
     return NextResponse.json(blog)

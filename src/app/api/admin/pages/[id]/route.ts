@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
+import { revalidatePath } from "next/cache"
 
 // GET - Get single page
 export async function GET(
@@ -42,6 +43,14 @@ export async function PUT(
       }
     })
     
+    // Revalidate relevant paths
+    revalidatePath("/")
+    revalidatePath("/hakkimizda")
+    revalidatePath("/iletisim")
+    revalidatePath("/kvkk")
+    revalidatePath("/gizlilik-politikasi")
+    revalidatePath("/admin/pages")
+    
     return NextResponse.json(page)
   } catch (error) {
     console.error("Error updating page:", error)
@@ -59,6 +68,14 @@ export async function DELETE(
     await db.pageContent.delete({
       where: { id }
     })
+    
+    // Revalidate relevant paths
+    revalidatePath("/")
+    revalidatePath("/hakkimizda")
+    revalidatePath("/iletisim")
+    revalidatePath("/kvkk")
+    revalidatePath("/gizlilik-politikasi")
+    revalidatePath("/admin/pages")
     
     return NextResponse.json({ success: true })
   } catch (error) {

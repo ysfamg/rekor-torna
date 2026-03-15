@@ -3,22 +3,19 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
-import { ArrowLeft, Phone } from "lucide-react"
-import { blogPosts } from "@/lib/data"
+import { ArrowLeft, Phone, Calendar, Eye } from "lucide-react"
+import { getBlogBySlug, getBlogs } from "@/lib/services"
+
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
 interface PageProps {
   params: Promise<{ slug: string }>
 }
 
-export async function generateStaticParams() {
-  return blogPosts.map((post) => ({
-    slug: post.slug,
-  }))
-}
-
 export async function generateMetadata({ params }: PageProps) {
   const { slug } = await params
-  const post = blogPosts.find((p) => p.slug === slug)
+  const post = await getBlogBySlug(slug)
   
   if (!post) {
     return { title: "Yazı Bulunamadı" }
@@ -32,11 +29,16 @@ export async function generateMetadata({ params }: PageProps) {
 
 export default async function BlogDetailPage({ params }: PageProps) {
   const { slug } = await params
-  const post = blogPosts.find((p) => p.slug === slug)
+  const post = await getBlogBySlug(slug)
 
   if (!post) {
     notFound()
   }
+
+  const allBlogs = await getBlogs()
+  const relatedPosts = allBlogs
+    .filter(p => p.id !== post.id && p.category === post.category)
+    .slice(0, 2)
 
   // Parse content
   const renderContent = (content: string) => {
@@ -71,9 +73,6 @@ export default async function BlogDetailPage({ params }: PageProps) {
     })
   }
 
-  // Related posts
-  const relatedPosts = blogPosts.filter(p => p.id !== post.id && p.category === post.category).slice(0, 2)
-
   return (
     <>
       {/* Page Header */}
@@ -84,11 +83,22 @@ export default async function BlogDetailPage({ params }: PageProps) {
             Tüm Yazılara Dön
           </Link>
           <div className="max-w-3xl">
-            <div className="flex items-center gap-3 mb-4">
+            <div className="flex items-center gap-4 mb-4">
               <Badge className="bg-orange-500/20 text-orange-300 border-orange-500/30">{post.category}</Badge>
-              <span className="text-slate-400 text-sm">{post.date}</span>
+              <div className="flex items-center gap-3 text-sm text-slate-400">
+                <span className="flex items-center gap-1">
+                  <Calendar className="w-3 h-3" />
+                  {new Date(post.createdAt).toLocaleDateString('tr-TR')}
+                </span>
+                {post.viewCount > 0 && (
+                  <span className="flex items-center gap-1">
+                    <Eye className="w-3 h-3" />
+                    {post.viewCount}
+                  </span>
+                )}
+              </div>
             </div>
-            <h1 className="text-3xl md:text-4xl font-bold text-white">{post.title}</h1>
+            <h1 className="text-3xl md:text-5xl font-bold text-white leading-tight">{post.title}</h1>
           </div>
         </div>
       </section>
@@ -99,21 +109,31 @@ export default async function BlogDetailPage({ params }: PageProps) {
           <div className="grid lg:grid-cols-3 gap-12 max-w-6xl mx-auto">
             {/* Main Content */}
             <article className="lg:col-span-2">
+              {post.imageUrl && (
+                <div className="rounded-2xl overflow-hidden mb-8 shadow-xl">
+                  <img
+                    src={post.imageUrl}
+                    alt={post.title}
+                    className="w-full h-auto"
+                  />
+                </div>
+              )}
               <div className="prose prose-lg dark:prose-invert max-w-none">
                 {renderContent(post.content)}
               </div>
             </article>
 
             {/* Sidebar */}
-            <aside className="space-y-6">
+            <aside className="space-y-8">
               {/* CTA */}
-              <Card className="bg-gradient-to-br from-orange-500 to-orange-600 border-0">
-                <CardContent className="p-6 text-center">
-                  <h3 className="text-lg font-bold text-white mb-2">Teklif Alın</h3>
-                  <p className="text-orange-100 text-sm mb-4">
-                    Profesyonel hizmetlerimiz için bize ulaşın
+              <Card className="bg-gradient-to-br from-orange-500 to-orange-600 border-0 shadow-xl overflow-hidden relative group">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110" />
+                <CardContent className="p-8 text-center relative z-10">
+                  <h3 className="text-xl font-bold text-white mb-3">Teklif Alın</h3>
+                  <p className="text-orange-100 mb-6">
+                    Profesyonel torna ve hidrolik çözümlerimiz için bize ulaşın.
                   </p>
-                  <Button asChild className="w-full bg-white text-orange-600 hover:bg-orange-50">
+                  <Button asChild className="w-full bg-white text-orange-600 hover:bg-orange-50 font-bold py-6">
                     <Link href="/iletisim">
                       <Phone className="w-4 h-4 mr-2" />
                       İletişime Geçin
@@ -124,17 +144,24 @@ export default async function BlogDetailPage({ params }: PageProps) {
 
               {/* Related Posts */}
               {relatedPosts.length > 0 && (
-                <div>
-                  <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4">İlgili Yazılar</h3>
-                  <div className="space-y-4">
+                <div className="space-y-4">
+                  <h3 className="text-xl font-bold text-slate-900 dark:text-white pl-4 border-l-4 border-orange-500">İlgili Yazılar</h3>
+                  <div className="grid gap-4">
                     {relatedPosts.map((relatedPost) => (
                       <Link key={relatedPost.id} href={`/blog/${relatedPost.slug}`}>
-                        <Card className="hover:shadow-lg transition-all cursor-pointer border-slate-200 dark:border-slate-700">
-                          <CardContent className="p-4">
-                            <Badge className="mb-2 text-xs">{relatedPost.category}</Badge>
-                            <h4 className="font-semibold text-slate-900 dark:text-white text-sm line-clamp-2">
-                              {relatedPost.title}
-                            </h4>
+                        <Card className="hover:shadow-xl transition-all cursor-pointer border-slate-200 dark:border-slate-700 hover:border-orange-500/50 group overflow-hidden">
+                          <CardContent className="p-0">
+                            {relatedPost.imageUrl && (
+                              <div className="aspect-video overflow-hidden">
+                                <img src={relatedPost.imageUrl} alt={relatedPost.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                              </div>
+                            )}
+                            <div className="p-4">
+                              <Badge variant="secondary" className="mb-2 text-xs">{relatedPost.category}</Badge>
+                              <h4 className="font-bold text-slate-900 dark:text-white text-sm line-clamp-2 group-hover:text-orange-500 transition-colors">
+                                {relatedPost.title}
+                              </h4>
+                            </div>
                           </CardContent>
                         </Card>
                       </Link>

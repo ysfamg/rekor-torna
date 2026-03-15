@@ -11,33 +11,17 @@ import {
   ArrowRight,
   Settings
 } from "lucide-react"
-import { servicesData } from "@/lib/data"
-import { db } from "@/lib/db"
+import { getServices, getSiteSettings } from "@/lib/services"
+
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
 export default async function HomePage() {
-  // Get stats from database
-  let stats = [
-    { value: "20+", label: "Yıllık Tecrübe" },
-    { value: "500+", label: "Mutlu Müşteri" },
-    { value: "1000+", label: "Tamamlanan Proje" },
-    { value: "7/24", label: "Destek Hizmeti" },
-  ]
-
-  let phone = ""
-
-  try {
-    const statsSetting = await db.siteSetting.findUnique({ where: { key: "stats" } })
-    if (statsSetting?.value) {
-      stats = JSON.parse(statsSetting.value)
-    }
-    
-    const phoneSetting = await db.siteSetting.findUnique({ where: { key: "phone" } })
-    if (phoneSetting?.value) {
-      phone = phoneSetting.value
-    }
-  } catch (error) {
-    console.error("Error fetching settings:", error)
-  }
+  const settings = await getSiteSettings()
+  const services = await getServices()
+  
+  const stats = settings.stats
+  const phone = settings.phone
 
   return (
     <>
@@ -55,18 +39,18 @@ export default async function HomePage() {
               Gemi Sanayi Uzmanı
             </Badge>
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-white mb-6 leading-tight">
-              Torna ve Hidrolik
-              <span className="block text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-orange-500">Çözümlerinde Lider</span>
+              {settings.siteTagline.split(' ').map((word, i) => (
+                i === 0 ? word + " " : <span key={i} className="block text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-orange-500">{word}</span>
+              ))}
             </h1>
             <p className="text-lg md:text-xl text-slate-300 mb-10 max-w-2xl mx-auto leading-relaxed">
-              20 yılı aşkın tecrübemizle gemi sanayinde torna işleri, hidrolik sistemler, 
-              parça temini ve özel üretim konularında profesyonel çözümler sunuyoruz.
+              {settings.siteDescription}
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Button size="lg" asChild className="bg-orange-500 hover:bg-orange-600 text-white shadow-xl shadow-orange-500/30 px-8 py-6 text-lg">
                 <Link href="/hizmetler">
                   <Wrench className="w-5 h-5 mr-2" />
-                  Hizmetlerimiz
+                  Hizmetler
                   <ChevronRight className="w-5 h-5 ml-2" />
                 </Link>
               </Button>
@@ -111,22 +95,22 @@ export default async function HomePage() {
           </div>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {servicesData.map((service) => {
+            {services.slice(0, 4).map((service) => {
               const IconComponent = service.icon
               return (
-                <Link key={service.id} href={`/hizmetler/${service.id}`}>
-                  <Card className="group cursor-pointer hover:shadow-2xl transition-all duration-300 border-slate-200 dark:border-slate-700 hover:border-orange-500/50 dark:hover:border-orange-500/50 overflow-hidden h-full">
+                <Link key={service.id} href={`/hizmetler/${service.slug}`}>
+                  <Card className="group cursor-pointer hover:shadow-2xl transition-all duration-300 border-slate-200 dark:border-slate-700 hover:border-orange-500/50 dark:hover:border-orange-500/50 overflow-hidden h-full relative">
                     <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
                     <CardHeader className="pb-4">
                       <div className="w-14 h-14 bg-gradient-to-br from-slate-800 to-slate-900 dark:from-slate-700 dark:to-slate-800 rounded-xl flex items-center justify-center mb-4 shadow-lg group-hover:from-orange-500 group-hover:to-orange-600 transition-all">
                         <IconComponent className="w-7 h-7 text-orange-400 group-hover:text-white transition-colors" />
                       </div>
                       <CardTitle className="text-xl">{service.shortTitle}</CardTitle>
-                      <CardDescription>{service.description}</CardDescription>
+                      <CardDescription className="line-clamp-2">{service.description}</CardDescription>
                     </CardHeader>
                     <CardContent className="pt-0">
                       <ul className="space-y-2 text-sm text-slate-600 dark:text-slate-400 mb-4">
-                        {service.features.map((feature, idx) => (
+                        {service.features.slice(0, 3).map((feature, idx) => (
                           <li key={idx} className="flex items-center gap-2">
                             <CheckCircle2 className="w-4 h-4 text-orange-500 flex-shrink-0" />
                             {feature}

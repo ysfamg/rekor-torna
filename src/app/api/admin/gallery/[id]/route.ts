@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { db } from "@/lib/db"
+import { revalidatePath } from "next/cache"
 
 // GET - Get single gallery item
 export async function GET(
@@ -45,6 +46,10 @@ export async function PUT(
       }
     })
     
+    revalidatePath("/")
+    revalidatePath("/galeri")
+    revalidatePath("/admin/gallery")
+    
     return NextResponse.json(item)
   } catch (error) {
     console.error("Error updating gallery item:", error)
@@ -62,6 +67,10 @@ export async function DELETE(
     await db.gallery.delete({
       where: { id }
     })
+    
+    revalidatePath("/")
+    revalidatePath("/galeri")
+    revalidatePath("/admin/gallery")
     
     return NextResponse.json({ success: true })
   } catch (error) {

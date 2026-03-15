@@ -10,40 +10,39 @@ import {
   Settings,
   Star
 } from "lucide-react"
-import { servicesData } from "@/lib/data"
+import { getServiceBySlug, getServices } from "@/lib/services"
+
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
 interface PageProps {
   params: Promise<{ slug: string }>
 }
 
-export async function generateStaticParams() {
-  return servicesData.map((service) => ({
-    slug: service.id,
-  }))
-}
-
 export async function generateMetadata({ params }: PageProps) {
   const { slug } = await params
-  const service = servicesData.find((s) => s.id === slug)
+  const service = await getServiceBySlug(slug)
   
   if (!service) {
     return { title: "Hizmet Bulunamadı" }
   }
 
   return {
-    title: `${service.title} | Rekor Torna Hidrolik`,
+    title: `${service.title} | ${process.env.NEXT_PUBLIC_SITE_NAME || 'Rekor Torna Hidrolik'}`,
     description: service.detailedDescription,
   }
 }
 
 export default async function ServiceDetailPage({ params }: PageProps) {
   const { slug } = await params
-  const service = servicesData.find((s) => s.id === slug)
+  const service = await getServiceBySlug(slug)
 
   if (!service) {
     notFound()
   }
 
+  const allServices = await getServices()
+  const otherServices = allServices.filter(s => s.slug !== slug).slice(0, 4)
   const IconComponent = service.icon
 
   return (
@@ -56,7 +55,7 @@ export default async function ServiceDetailPage({ params }: PageProps) {
             Tüm Hizmetlere Dön
           </Link>
           <div className="flex items-center gap-6">
-            <div className="w-20 h-20 bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl flex items-center justify-center shadow-xl">
+            <div className="w-20 h-20 bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl flex items-center justify-center shadow-xl flex-shrink-0">
               <IconComponent className="w-10 h-10 text-white" />
             </div>
             <div>
@@ -75,67 +74,73 @@ export default async function ServiceDetailPage({ params }: PageProps) {
             <div className="lg:col-span-2 space-y-8">
               <div>
                 <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">Hakkında</h2>
-                <p className="text-slate-600 dark:text-slate-400 leading-relaxed text-lg">
+                <div className="text-slate-600 dark:text-slate-400 leading-relaxed text-lg whitespace-pre-wrap">
                   {service.detailedDescription}
-                </p>
+                </div>
               </div>
 
               {/* Applications */}
-              <div>
-                <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-                  <Settings className="w-6 h-6 text-orange-500" />
-                  Uygulama Alanları
-                </h2>
-                <div className="grid sm:grid-cols-2 gap-3">
-                  {service.applications.map((app, idx) => (
-                    <div key={idx} className="flex items-center gap-2 text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-800 rounded-lg px-4 py-3">
-                      <CheckCircle2 className="w-5 h-5 text-orange-500 flex-shrink-0" />
-                      {app}
-                    </div>
-                  ))}
+              {service.applications.length > 0 && (
+                <div>
+                  <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                    <Settings className="w-6 h-6 text-orange-500" />
+                    Uygulama Alanları
+                  </h2>
+                  <div className="grid sm:grid-cols-2 gap-3">
+                    {service.applications.map((app, idx) => (
+                      <div key={idx} className="flex items-center gap-2 text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-800 rounded-lg px-4 py-3">
+                        <CheckCircle2 className="w-5 h-5 text-orange-500 flex-shrink-0" />
+                        {app}
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Equipment */}
-              <div>
-                <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">Ekipman ve Kapasite</h2>
-                <div className="flex flex-wrap gap-2">
-                  {service.equipment.map((eq, idx) => (
-                    <Badge key={idx} variant="outline" className="border-orange-500/30 text-orange-600 dark:text-orange-400 py-2 px-4 text-sm">
-                      {eq}
-                    </Badge>
-                  ))}
+              {service.equipment.length > 0 && (
+                <div>
+                  <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">Ekipman ve Kapasite</h2>
+                  <div className="flex flex-wrap gap-2">
+                    {service.equipment.map((eq, idx) => (
+                      <Badge key={idx} variant="outline" className="border-orange-500/30 text-orange-600 dark:text-orange-400 py-2 px-4 text-sm">
+                        {eq}
+                      </Badge>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
             {/* Sidebar */}
             <div className="space-y-6">
               {/* Benefits */}
-              <Card className="border-slate-200 dark:border-slate-700">
-                <CardContent className="p-6">
-                  <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-                    <Star className="w-5 h-5 text-orange-500" />
-                    Avantajlar
-                  </h3>
-                  <div className="space-y-4">
-                    {service.benefits.map((benefit, idx) => {
-                      const BenefitIcon = benefit.icon
-                      return (
-                        <div key={idx} className="flex items-start gap-3">
-                          <div className="w-10 h-10 bg-orange-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                            <BenefitIcon className="w-5 h-5 text-orange-500" />
+              {service.benefits.length > 0 && (
+                <Card className="border-slate-200 dark:border-slate-700">
+                  <CardContent className="p-6">
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+                      <Star className="w-5 h-5 text-orange-500" />
+                      Avantajlar
+                    </h3>
+                    <div className="space-y-4">
+                      {service.benefits.map((benefit, idx) => {
+                        const BenefitIcon = benefit.icon
+                        return (
+                          <div key={idx} className="flex items-start gap-3">
+                            <div className="w-10 h-10 bg-orange-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                              <BenefitIcon className="w-5 h-5 text-orange-500" />
+                            </div>
+                            <div>
+                              <h4 className="font-semibold text-slate-900 dark:text-white">{benefit.title}</h4>
+                              <p className="text-sm text-slate-600 dark:text-slate-400">{benefit.description}</p>
+                            </div>
                           </div>
-                          <div>
-                            <h4 className="font-semibold text-slate-900 dark:text-white">{benefit.title}</h4>
-                            <p className="text-sm text-slate-600 dark:text-slate-400">{benefit.description}</p>
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                </CardContent>
-              </Card>
+                        )
+                      })}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
 
               {/* CTA */}
               <Card className="bg-gradient-to-br from-orange-500 to-orange-600 border-0">
@@ -158,28 +163,30 @@ export default async function ServiceDetailPage({ params }: PageProps) {
       </section>
 
       {/* Other Services */}
-      <section className="py-16 bg-slate-50 dark:bg-slate-800/50">
-        <div className="container mx-auto px-4">
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-8">Diğer Hizmetlerimiz</h2>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {servicesData.filter(s => s.id !== service.id).map((otherService) => {
-              const OtherIcon = otherService.icon
-              return (
-                <Link key={otherService.id} href={`/hizmetler/${otherService.id}`}>
-                  <Card className="hover:shadow-lg transition-all cursor-pointer border-slate-200 dark:border-slate-700 hover:border-orange-500/50">
-                    <CardContent className="p-4 flex items-center gap-3">
-                      <div className="w-10 h-10 bg-slate-100 dark:bg-slate-700 rounded-lg flex items-center justify-center">
-                        <OtherIcon className="w-5 h-5 text-orange-500" />
-                      </div>
-                      <span className="font-medium text-slate-900 dark:text-white">{otherService.shortTitle}</span>
-                    </CardContent>
-                  </Card>
-                </Link>
-              )
-            })}
+      {otherServices.length > 0 && (
+        <section className="py-16 bg-slate-50 dark:bg-slate-800/50">
+          <div className="container mx-auto px-4">
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-8">Diğer Hizmetlerimiz</h2>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {otherServices.map((otherService) => {
+                const OtherIcon = otherService.icon
+                return (
+                  <Link key={otherService.id} href={`/hizmetler/${otherService.slug}`}>
+                    <Card className="hover:shadow-lg transition-all cursor-pointer border-slate-200 dark:border-slate-700 hover:border-orange-500/50">
+                      <CardContent className="p-4 flex items-center gap-3">
+                        <div className="w-10 h-10 bg-slate-100 dark:bg-slate-700 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <OtherIcon className="w-5 h-5 text-orange-500" />
+                        </div>
+                        <span className="font-medium text-slate-900 dark:text-white">{otherService.shortTitle}</span>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                )
+              })}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
     </>
   )
 }
