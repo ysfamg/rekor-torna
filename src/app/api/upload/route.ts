@@ -25,13 +25,29 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Dosya boyutu 5MB'dan küçük olmalıdır" }, { status: 400 })
     }
 
-    // Create uploads directory if not exists
-    const uploadsDir = path.join(process.cwd(), "public", "uploads")
-    console.log("Upload directory:", uploadsDir)
+    // Base directory resolution
+    const baseDir = process.cwd()
+    const relativeUploadsDir = path.join("public", "uploads")
     
-    if (!existsSync(uploadsDir)) {
-      console.log("Creating uploads directory...")
-      await mkdir(uploadsDir, { recursive: true })
+    // Primary uploads directory (project root)
+    const primaryUploadsDir = path.join(baseDir, relativeUploadsDir)
+    
+    // Secondary uploads directory (for standalone mode)
+    // In standalone mode, Next.js serves from .next/standalone/public
+    const standaloneUploadsDir = path.join(baseDir, ".next", "standalone", relativeUploadsDir)
+    
+    const targetDirs = [primaryUploadsDir]
+    if (primaryUploadsDir !== standaloneUploadsDir && existsSync(path.join(baseDir, ".next", "standalone"))) {
+      targetDirs.push(standaloneUploadsDir)
+    }
+
+    console.log("Target upload directories:", targetDirs)
+
+    for (const dir of targetDirs) {
+      if (!existsSync(dir)) {
+        console.log(`Creating directory: ${dir}`)
+        await mkdir(dir, { recursive: true })
+      }
     }
 
     // Generate unique filename
@@ -39,16 +55,21 @@ export async function POST(request: NextRequest) {
     const randomStr = Math.random().toString(36).substring(2, 8)
     const ext = (file.name.split(".").pop() || "jpg").toLowerCase()
     const filename = `${timestamp}-${randomStr}.${ext}`
-    const filepath = path.join(uploadsDir, filename)
-    console.log("Saving file to:", filepath)
-
-    // Convert file to buffer and save
+    
+    // Convert file to buffer
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
-    await writeFile(filepath, buffer)
-    console.log("File saved successfully")
 
-    // Return public URL
+    // Save to all target directories
+    for (const dir of targetDirs) {
+      const filepath = path.join(dir, filename)
+      console.log(`Saving file to: ${filepath}`)
+      await writeFile(filepath, buffer)
+    }
+    
+    console.log("File saved successfully to all locations")
+
+    // Return public URL (Next.js serves from /uploads/)
     const publicUrl = `/uploads/${filename}`
     
     return NextResponse.json({ 
