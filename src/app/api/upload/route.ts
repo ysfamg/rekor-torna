@@ -26,37 +26,25 @@ export async function POST(request: NextRequest) {
     }
 
     // --- Robust Path Resolution ---
+    // Her ortamda kararlı olması için Next.js'in statik/standalone klasörü
+    // yerine, daima uygulamanın çalıştığı ana dizindeki (root) 'uploads' klasörünü kullanıyoruz.
     const cwd = process.cwd()
-    const relativeUploadsDir = path.join("public", "uploads")
+    const isStandalone = cwd.includes(".next") || cwd.includes("standalone")
     
-    // Logic to find the real project root and the active public folder
-    let projectRoot = cwd
-    let activePublicDir = path.join(cwd, "public")
-
-    // If we are inside .next/standalone, the actual project root is 2 levels up
-    if (cwd.includes(path.join(".next", "standalone"))) {
-      projectRoot = path.resolve(cwd, "..", "..")
-      activePublicDir = path.join(cwd, "public") // In standalone, public is inside standalone
-    }
-
-    const uploadsDirs = [
-      path.join(projectRoot, relativeUploadsDir), // Global permanent uploads
-      path.join(activePublicDir, "uploads")        // Active serving uploads
-    ]
-
-    // Remove duplicates
-    const finalTargetDirs = Array.from(new Set(uploadsDirs))
+    // Eğer standalone build içinde çalışıyorsa, root dizin 2 klasör üsttedir.
+    const projectRoot = isStandalone ? path.resolve(cwd, "..", "..") : cwd
     
-    console.log("[Upload] Detected CWD:", cwd)
-    console.log("[Upload] Project Root:", projectRoot)
-    console.log("[Upload] Target Directories:", finalTargetDirs)
+    // Yükleme klasörü her zaman projenin ana dizinindeki 'uploads' olacak
+    const uploadsDir = path.join(projectRoot, "uploads")
+    
+    console.log("[Upload] Gelen CWD:", cwd)
+    console.log("[Upload] Project Root (Hesaplanan):", projectRoot)
+    console.log("[Upload] Sabit Hedef Dizin:", uploadsDir)
 
-    // Ensure all directories exist
-    for (const dir of finalTargetDirs) {
-      if (!existsSync(dir)) {
-        console.log(`[Upload] Creating directory: ${dir}`)
-        await mkdir(dir, { recursive: true })
-      }
+    // Klasör yoksa oluştur
+    if (!existsSync(uploadsDir)) {
+      console.log(`[Upload] Klasör oluşturuluyor: ${uploadsDir}`)
+      await mkdir(uploadsDir, { recursive: true })
     }
 
     // Generate unique filename
@@ -69,14 +57,12 @@ export async function POST(request: NextRequest) {
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
 
-    // Save to all target directories
-    for (const dir of finalTargetDirs) {
-      const filepath = path.join(dir, filename)
-      console.log(`[Upload] Saving to: ${filepath}`)
-      await writeFile(filepath, buffer)
-    }
+    // Sadece bir hedefe kaydet (Nginx'in statik sunacağı yer)
+    const filepath = path.join(uploadsDir, filename)
+    console.log(`[Upload] Saving to: ${filepath}`)
+    await writeFile(filepath, buffer)
     
-    console.log("[Upload] Success: Saved to all locations")
+    console.log("[Upload] Başarılı: Dosya ana yerleşkeye kaydedildi")
 
     // Return public URL
     const publicUrl = `/uploads/${filename}`
